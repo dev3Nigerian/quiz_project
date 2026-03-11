@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 
-// Allow overriding the SQLite file path via environment variable.
+// Use DB_PATH from .env, otherwise create/use quiz_app.db in the project folder.
 const dbPath = process.env.DB_PATH || './quiz_app.db';
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
@@ -12,13 +12,16 @@ const db = new sqlite3.Database(dbPath, (err) => {
     console.log('Connected to SQLite database:', dbPath);
 });
 
-// Wait briefly when the database is locked instead of failing immediately.
+// Wait up to 5 seconds if SQLite is temporarily busy.
 db.configure('busyTimeout', 5000);
 
 function query(sql, params = []) {
+    const normalizedSql = sql.trim().toUpperCase();
+    const isReadQuery = normalizedSql.startsWith('SELECT');
+
     return new Promise((resolve, reject) => {
-        // Return rows for reads, and metadata for writes.
-        if (sql.trim().toUpperCase().startsWith('SELECT')) {
+        // SELECT -> return rows
+        if (isReadQuery) {
             db.all(sql, params, (err, rows) => {
                 if (err) {
                     reject(err);
@@ -26,23 +29,25 @@ function query(sql, params = []) {
                     resolve(rows || []);
                 }
             });
-        } else {
-            db.run(sql, params, function (err) {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve({
-                        insertId: this.lastID,
-                        affectedRows: this.changes
-                    });
-                }
-            });
+            return;
         }
+
+        // INSERT/UPDATE/DELETE -> return metadata
+        db.run(sql, params, function (err) {
+            if (err) {
+                reject(err);
+            } else {
+                resolve({
+                    insertId: this.lastID,
+                    affectedRows: this.changes
+                });
+            }
+        });
     });
 }
 
 function getConnection() {
-    // Keep a mysql-like transaction API for controller compatibility.
+    // Provide a MySQL-like transaction API used in some controllers.
     return Promise.resolve({
         query,
         beginTransaction: () => query('BEGIN TRANSACTION'),
@@ -53,14 +58,19 @@ function getConnection() {
 }
 
 async function initializeSchema() {
-    // Execute semicolon-separated schema statements in order.
+    // Load and run the full schema file.
     const schemaPath = path.join(__dirname, '..', 'schema.sql');
     const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-    const statements = schemaSql.split(';').filter((stmt) => stmt.trim());
 
-    for (const statement of statements) {
-        await query(statement);
-    }
+    await new Promise((resolve, reject) => {
+        db.exec(schemaSql, (err) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve();
+            }
+        });
+    });
 }
 
 module.exports = {

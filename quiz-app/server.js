@@ -10,34 +10,38 @@ const quizRoutes = require('./routes/quizRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// Core request middleware.
+// Parse JSON request bodies.
 app.use(express.json());
+
+// Allow requests from browser clients on other origins.
 app.use(cors());
+
+// Serve static files from /public.
 app.use(express.static(path.join(__dirname, 'public')));
 
-// API route groups.
+// Route groups.
 app.use('/api/auth', authRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Centralized error response handler.
 app.use((err, req, res, next) => {
     console.error('Unhandled error:', err);
     const status = err.statusCode || 500;
-    return res.status(status).json({
+    res.status(status).json({
         success: false,
         message: err.message || 'Internal server error'
     });
 });
 
-const PORT = process.env.PORT || 3000;
-
-// Ensure schema exists before accepting requests.
-(async () => {
+async function startServer() {
     try {
+        // Create tables if they do not exist yet.
         await initializeSchema();
         console.log('Database schema ensured.');
+
+        // Start listening for incoming requests.
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
         });
@@ -45,4 +49,6 @@ const PORT = process.env.PORT || 3000;
         console.error('Server startup failed:', error.message);
         process.exit(1);
     }
-})();
+}
+
+startServer();
