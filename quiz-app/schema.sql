@@ -1,3 +1,4 @@
+-- User accounts and authentication metadata.
 CREATE TABLE IF NOT EXISTS users (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     name          TEXT NOT NULL,
@@ -8,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Quiz definitions created by admins.
 CREATE TABLE IF NOT EXISTS quizzes (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     title       TEXT NOT NULL,
@@ -18,6 +20,7 @@ CREATE TABLE IF NOT EXISTS quizzes (
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Individual questions belonging to a quiz.
 CREATE TABLE IF NOT EXISTS questions (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     quiz_id       INTEGER NOT NULL,
@@ -25,6 +28,7 @@ CREATE TABLE IF NOT EXISTS questions (
     FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
 );
 
+-- Answer options for each question (single correct flag).
 CREATE TABLE IF NOT EXISTS answers (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     question_id INTEGER NOT NULL,
@@ -33,6 +37,7 @@ CREATE TABLE IF NOT EXISTS answers (
     FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 );
 
+-- Completed quiz attempts and final score snapshot.
 CREATE TABLE IF NOT EXISTS results (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id         INTEGER NOT NULL,

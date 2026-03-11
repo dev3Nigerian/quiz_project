@@ -11,14 +11,17 @@ const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
+// Core request middleware.
 app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// API route groups.
 app.use('/api/auth', authRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/admin', adminRoutes);
 
+// Centralized error response handler.
 app.use((err, req, res, next) => {
     console.error('Unhandled error:', err);
     const status = err.statusCode || 500;
@@ -30,6 +33,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
+// Ensure schema exists before accepting requests.
 (async () => {
     try {
         await initializeSchema();
