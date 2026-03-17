@@ -6,8 +6,6 @@ const path = require('path');
 const { initializeSchema } = require('./config/db');
 
 const authRoutes = require('./routes/authRoutes');
-const quizRoutes = require('./routes/quizRoutes');
-const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,8 +21,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Route groups.
 app.use('/api/auth', authRoutes);
-app.use('/api/quiz', quizRoutes);
-app.use('/api/admin', adminRoutes);
 
 app.use((err, req, res, next) => {
     console.error('Unhandled error:', err);
