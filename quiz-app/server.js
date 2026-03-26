@@ -5,7 +5,9 @@ const cors = require('cors');
 const path = require('path');
 const { initializeSchema } = require('./config/db');
 
+
 const authRoutes = require('./routes/authRoutes');
+const quizRoutes = require('./routes/quizRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,7 +22,9 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Route groups.
+
 app.use('/api/auth', authRoutes);
+app.use('/api', quizRoutes); // All quiz and result endpoints are under /api
 
 app.use((err, req, res, next) => {
     console.error('Unhandled error:', err);
